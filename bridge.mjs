@@ -26,7 +26,7 @@ const argOf = (nome, fallback) => {
   const i = args.indexOf(nome);
   return i >= 0 && args[i + 1] ? args[i + 1] : fallback;
 };
-const PORT = Number(argOf("--port", "8790"));
+const PORT = Number(argOf("--port", "18990"));
 const BIND = argOf("--bind", "127.0.0.1");
 
 function caricaConfig() {
@@ -63,6 +63,20 @@ wss.on("connection", (ws, req) => {
   if (url.searchParams.get("token") !== config.token) {
     log("Connessione rifiutata: token errato");
     ws.close(1008, "token errato");
+    return;
+  }
+  const ruolo = url.searchParams.get("role");
+  if (ruolo === "client") {
+    log("Client MCP collegato via WebSocket");
+    ws.on("message", async (dati) => {
+      let msg;
+      try {
+        msg = JSON.parse(String(dati));
+      } catch {
+        return;
+      }
+      await gestisci(msg, (testo) => ws.send(testo));
+    });
     return;
   }
   if (socketEstensione) {
@@ -176,11 +190,11 @@ const TOOLS = [
   },
 ];
 
-function rispondi(id, result) {
-  process.stdout.write(JSON.stringify({ jsonrpc: "2.0", id, result }) + "\n");
+function rispondi(invia, id, result) {
+  invia(JSON.stringify({ jsonrpc: "2.0", id, result }));
 }
-function rispondiErrore(id, code, message) {
-  process.stdout.write(JSON.stringify({ jsonrpc: "2.0", id, error: { code, message } }) + "\n");
+function rispondiErrore(invia, id, code, message) {
+  invia(JSON.stringify({ jsonrpc: "2.0", id, error: { code, message } }));
 }
 
 let buffer = "";
@@ -198,14 +212,15 @@ process.stdin.on("data", async (pezzo) => {
     } catch {
       continue;
     }
-    await gestisci(msg);
+    const inviaStdout = (testo) => process.stdout.write(testo + "\n");
+    await gestisci(msg, inviaStdout);
   }
 });
 
-async function gestisci(msg) {
+async function gestisci(msg, invia) {
   const { id, method, params } = msg;
   if (method === "initialize") {
-    rispondi(id, {
+    rispondi(invia, id, {
       protocolVersion: "2024-11-05",
       capabilities: { tools: {} },
       serverInfo: { name: "chrome-ai-bridge", version: "0.1.0" },
@@ -213,11 +228,11 @@ async function gestisci(msg) {
     return;
   }
   if (method === "notifications/initialized" || method === "ping") {
-    if (method === "ping") rispondi(id, {});
+    if (method === "ping") rispondi(invia, id, {});
     return;
   }
   if (method === "tools/list") {
-    rispondi(id, {
+    rispondi(invia, id, {
       tools: TOOLS.map(({ name, description, inputSchema }) => ({ name, description, inputSchema })),
     });
     return;
@@ -225,7 +240,7 @@ async function gestisci(msg) {
   if (method === "tools/call") {
     const tool = TOOLS.find((t) => t.name === params?.name);
     if (!tool) {
-      rispondiErrore(id, -32602, `Strumento sconosciuto: ${params?.name}`);
+      rispondiErrore(invia, id, -32602, `Strumento sconosciuto: ${params?.name}`);
       return;
     }
     try {
@@ -239,13 +254,13 @@ async function gestisci(msg) {
       } else {
         contenuto.push({ type: "text", text: JSON.stringify(esito, null, 1) });
       }
-      rispondi(id, { content: contenuto });
+      rispondi(invia, id, { content: contenuto });
     } catch (exc) {
-      rispondi(id, { content: [{ type: "text", text: `Errore: ${exc.message}` }], isError: true });
+      rispondi(invia, id, { content: [{ type: "text", text: `Errore: ${exc.message}` }], isError: true });
     }
     return;
   }
-  if (id !== undefined) rispondiErrore(id, -32601, `Metodo non supportato: ${method}`);
+  if (id !== undefined) rispondiErrore(invia, id, -32601, `Metodo non supportato: ${method}`);
 }
 
 log(`in ascolto su ws://${BIND}:${PORT} (config: ${CONFIG_PATH})`);

@@ -5,14 +5,16 @@ import { homedir } from "node:os";
 import { join } from "node:path";
 import { WebSocket } from "ws";
 
-const PORTA = 8790;
+const PORTA = 18990;
 const attese = new Map();
 let esiti = 0, falliti = 0;
 const check = (nome, ok, extra = "") => { ok ? esiti++ : falliti++; console.log(`${ok ? "PASS" : "FAIL"} ${nome}${extra ? " | " + extra : ""}`); };
 
-const watchdog = setTimeout(() => { console.log("TIMEOUT del test"); ponte.kill("SIGKILL"); process.exit(2); }, 22000);
-
-const ponte = spawn("node", ["bridge.mjs"], { cwd: "/root/chrome-ai-bridge", stdio: ["pipe", "pipe", "ignore"] });
+const ponte = spawn("node", ["bridge.mjs"], { cwd: "/root/chrome-ai-bridge", stdio: ["pipe", "pipe", "pipe"] });
+let logPonte = "";
+ponte.stderr.setEncoding("utf8");
+ponte.stderr.on("data", (p) => { logPonte += p; });
+const watchdog = setTimeout(() => { console.log("TIMEOUT del test"); console.log("--- log ponte ---\n" + logPonte); ponte.kill("SIGKILL"); process.exit(2); }, 22000);
 ponte.stdout.setEncoding("utf8");
 let buffer = "";
 ponte.stdout.on("data", (pezzo) => {
