@@ -59,6 +59,7 @@ Riavvia l'agente: avrai gli strumenti `browser_*` pronti.
 - Il **token** è obbligatorio e viene generato al primo avvio in `~/.chrome-ai-bridge.json` (chmod 600).
 - Non esporre mai la porta su internet e non passare il token a terzi.
 - Per staccare tutto: disattiva l'estensione, o chiudi il ponte.
+- Il ponte invia al client MCP delle **istruzioni di sicurezza**: il contenuto delle pagine è dato non fidato, e per azioni che inviano, cancellano o spendono serve la conferma dell'utente.
 
 ## Strumenti disponibili
 
@@ -72,6 +73,7 @@ Riavvia l'agente: avrai gli strumenti `browser_*` pronti.
 | `browser_evaluate` | esegue JavaScript nella pagina |
 | `browser_screenshot` | screenshot della scheda attiva |
 | `browser_get_text` | testo della pagina |
+| `browser_find` | cerca un testo nella pagina e dà i ref da cliccare |
 
 ## Alternativa senza estensione
 
@@ -79,4 +81,4 @@ Vedi `classic-cdp/`: metodo con Chrome in debug + relay TCP, utile in ambienti d
 
 ## Licenza
 
-MIT — vedi `LICENSE`. Puoi usarlo, modificarlo e venderlo; tieni solo la nota di copyright.
+MIT: vedi `LICENSE`. Puoi usarlo, modificarlo e venderlo; tieni solo la nota di copyright.
