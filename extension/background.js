@@ -1,5 +1,5 @@
 /**
- * Chrome AI Bridge — service worker dell'estensione.
+ * Chrome AI Bridge: service worker dell'estensione.
  * Si collega al ponte locale (WebSocket) e esegue i comandi sul browser
  * tramite chrome.debugger (Chrome DevTools Protocol).
  *
@@ -162,6 +162,35 @@ async function actionSnapshot({ tab }) {
   return `# ${dati.titolo}\n${dati.url}\n\n## Elementi interattivi\n${elenco || "(nessuno)"}\n\n## Testo\n${dati.testo || ""}`;
 }
 
+async function actionFind({ query, tab }) {
+  if (!query) throw new Error("Serve un testo da cercare");
+  const tabId = await schedaAttiva(tab);
+  await debug(tabId);
+  const frase = String(query).replace(/"/g, '\\"');
+  const esito = await valuta(tabId, `(() => {
+    const frase = "${frase}".toLowerCase();
+    const trovati = [];
+    const candidati = Array.from(document.querySelectorAll("a,button,[role=button],input,select,textarea,summary,li,td,h1,h2,h3,p,span,div"))
+      .filter(el => {
+        const testo = (el.innerText || el.value || el.placeholder || "").toLowerCase();
+        if (!testo.includes(frase)) return false;
+        const r = el.getBoundingClientRect();
+        if (r.width < 6 || r.height < 6) return false;
+        const figli = Array.from(el.children).some(c => ((c.innerText || "").toLowerCase().includes(frase)));
+        return !figli; // preferisci l'elemento piu' specifico
+      });
+    candidati.slice(0, 20).forEach(el => {
+      const ref = "mcp-" + (trovati.length + 1);
+      el.setAttribute("data-mcp-id", ref);
+      const r = el.getBoundingClientRect();
+      trovati.push({ ref, tag: el.tagName.toLowerCase(), testo: (el.innerText || el.value || "").replace(/\\s+/g, " ").trim().slice(0, 100), x: Math.round(r.left), y: Math.round(r.top) });
+    });
+    return trovati;
+  })()`);
+  if (!Array.isArray(esito) || !esito.length) return `Nessuna occorrenza di "${query}" nella pagina.`;
+  return `Trovate ${esito.length} occorrenze di "${query}":\n` + esito.map(e => `${e.ref} | ${e.tag} | (${e.x},${e.y}) | ${e.testo}`).join("\n");
+}
+
 async function actionGetText({ max = 4000, tab }) {
   const tabId = await schedaAttiva(tab);
   await debug(tabId);
@@ -251,6 +280,7 @@ async function esegui(action, params) {
     case "tabs": return actionTabs(params);
     case "snapshot": return actionSnapshot(params);
     case "get_text": return actionGetText(params);
+    case "find": return actionFind(params);
     case "click": return actionClick(params);
     case "type": return actionType(params);
     case "evaluate": return actionEvaluate(params);
