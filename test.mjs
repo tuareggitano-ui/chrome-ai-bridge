@@ -51,7 +51,7 @@ const init = await invia(1, "initialize", { protocolVersion: "2024-11-05", capab
 check("initialize", init?.result?.serverInfo?.name === "chrome-ai-bridge");
 const lista = await invia(2, "tools/list");
 const nomi = (lista?.result?.tools ?? []).map((t) => t.name);
-check("tools/list (8 strumenti)", nomi.length === 8, nomi.join(","));
+check("tools/list (9 strumenti)", nomi.length === 9, nomi.join(","));
 const chiamata = await invia(3, "tools/call", { name: "browser_navigate", arguments: { url: "https://example.com" } });
 check("tools/call navigate", chiamata?.result?.content?.[0]?.text === "MOCK:navigate", JSON.stringify(chiamata).slice(0, 140));
 const scatto = await invia(4, "tools/call", { name: "browser_screenshot", arguments: {} });
