@@ -1,0 +1,11 @@
+{
+  "manifest_version": 3,
+  "name": "Chrome AI Bridge",
+  "version": "0.1.0",
+  "description": "Permette a un agente AI (opencode/Claude, via MCP) di controllare questo browser, sul profilo reale e con i tuoi accessi.",
+  "minimum_chrome_version": "116",
+  "permissions": ["debugger", "tabs", "storage", "alarms"],
+  "host_permissions": ["<all_urls>"],
+  "background": { "service_worker": "background.js", "type": "module" },
+  "options_page": "options.html"
+}

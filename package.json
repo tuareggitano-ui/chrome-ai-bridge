@@ -1,0 +1,10 @@
+{
+  "name": "chrome-ai-bridge",
+  "version": "0.1.0",
+  "description": "Controlla il tuo browser Chrome reale con un agente AI (extensione + ponte locale + MCP)",
+  "type": "module",
+  "license": "MIT",
+  "bin": { "chrome-ai-bridge": "./bridge.mjs" },
+  "dependencies": { "ws": "^8.18.0" },
+  "engines": { "node": ">=18" }
+}

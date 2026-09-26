@@ -1,0 +1,11 @@
+{
+  // Esempio: aggiungi questo blocco al tuo ~/.config/opencode/opencode.json(c)
+  "$schema": "https://opencode.ai/config.json",
+  "mcp": {
+    "chrome-ai-bridge": {
+      "type": "local",
+      "command": ["node", "/SOSTITUISCI/percorso/chrome-ai-bridge/bridge.mjs"],
+      "enabled": true
+    }
+  }
+}
